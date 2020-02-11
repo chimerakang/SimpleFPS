@@ -1,0 +1,22 @@
+fileFormatVersion: 2
+guid: ab890bfeb9a4fb64c8bc81ca1c9ec1ee
+timeCreated: 1508964047
+licenseType: Free
+TrueTypeFontImporter:
+  externalObjects: {}
+  serializedVersion: 4
+  fontSize: 16
+  forceTextureCase: -2
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontName: Julius Sans One
+  fontNames:
+  - Julius Sans One
+  fallbackFontReferences: []
+  customCharacters: 
+  fontRenderingMode: 0
+  ascentCalculationMode: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
