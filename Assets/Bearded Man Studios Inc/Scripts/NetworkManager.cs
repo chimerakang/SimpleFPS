@@ -7,6 +7,8 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
+using uPLibrary.Networking.M2Mqtt;
+using uPLibrary.Networking.M2Mqtt.Messages;
 using UniRx;
 
 namespace BeardedManStudios.Forge.Networking.Unity
@@ -117,6 +119,12 @@ namespace BeardedManStudios.Forge.Networking.Unity
                     e => Debug.Log(e)
                 );
 
+            PTK.ArenaObservable.PlayerDataReceiver("", ansuzClient.ArenaID, (int)PTK.AnsuzRequestID.SendPlayerModel )
+                .Subscribe(result =>
+                {
+                    Debug.Log("receive player model data:" + result.StringData );
+                }, e => Debug.Log(e) );
+
         }
 
         private void arenaDisonnected()
@@ -126,7 +134,10 @@ namespace BeardedManStudios.Forge.Networking.Unity
             {
                 OnDisconnected();
             }
+        }
 
+        void OnReceivedMsg(MqttMsgPublishEventArgs mqttMsg)
+        {
         }
 
         private void OnEnable()

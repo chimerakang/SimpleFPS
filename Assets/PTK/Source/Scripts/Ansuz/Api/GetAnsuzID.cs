@@ -26,8 +26,6 @@ namespace PTK
 
             return SendRequest<GetAansuzIDResponse>(request);
         }
-
     }
-
 }
 

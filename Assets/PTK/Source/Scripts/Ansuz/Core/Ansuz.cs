@@ -9,7 +9,7 @@ using UniRx;
 
 namespace PTK
 {
-    public class Ansuz  : MonoBehaviour
+    public class Ansuz : MonoBehaviour
     {
         public static bool Ansuzinitialized = false;
         public static Ansuz Instance { get; private set; }
@@ -77,6 +77,20 @@ namespace PTK
                 false);
 
             Debug.Log("Publish :> Id ( " + msgId + " ) msg => " + message);
+
+            return true;
+        }
+
+        public bool PublishToTopic(string topic, string message, byte qos )
+        {
+            if (_client == null)
+                return false;
+
+            if (!_client.IsConnected)
+                return false;
+
+            ushort msgId = _client.Publish(topic, Encoding.UTF8.GetBytes(message), qos, false);
+            Debug.Log("PublishToTopic :> Id ( " + msgId + " ) msg => " + message);
 
             return true;
         }

@@ -16,7 +16,6 @@ namespace PTK
         SendPlayerModel = 9,
     }
 
-
     public static partial class ObservableAusuz
     {
         public static IObservable<T> SendRequest<T>(AnsuzRequest request) where T : AnsuzRequest, new()
