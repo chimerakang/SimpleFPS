@@ -9,7 +9,7 @@ namespace PTK
         GetArenaID = 2,
         AnsuzLogin = 3,
         SendDeviceToken = 4,
-        SendStatistics = 5,
+        SendFrameData = 5,
         SendSongRecord = 6,
         SendChallengeRecord = 7,
         GetAppVersion = 8,

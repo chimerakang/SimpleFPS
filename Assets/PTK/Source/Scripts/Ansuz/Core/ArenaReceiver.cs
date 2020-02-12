@@ -16,7 +16,6 @@ namespace PTK
     {
         public int UID;
         public int RequestID;
-        public string ArenaID;
         public string BMSData;
         public event Action<string> MessageReceived;
 

@@ -265,40 +265,34 @@ namespace BeardedManStudios.Forge.Networking.Generated
             if ((0x1 & _dirtyFields[0]) != 0)
             {
                 UnityObjectMapper.Instance.MapBytes(dirtyFieldsData, _position);
-                _playerData._position = _position;
             }
 			if ((0x2 & _dirtyFields[0]) != 0)
             {
                 UnityObjectMapper.Instance.MapBytes(dirtyFieldsData, _rotation);
-                _playerData._rotation = _rotation;
             }
             if ((0x4 & _dirtyFields[0]) != 0)
             {
                 UnityObjectMapper.Instance.MapBytes(dirtyFieldsData, _spineRotation);
-                _playerData._spineRotation = _spineRotation;
             }
             if ((0x8 & _dirtyFields[0]) != 0)
             {
                 UnityObjectMapper.Instance.MapBytes(dirtyFieldsData, _vertical);
-                _playerData._vertical = _vertical;
             }
             if ((0x10 & _dirtyFields[0]) != 0)
             {
                 UnityObjectMapper.Instance.MapBytes(dirtyFieldsData, _horizontal);
-                _playerData._horizontal = _horizontal;
             }
             if ((0x20 & _dirtyFields[0]) != 0)
             {
                 UnityObjectMapper.Instance.MapBytes(dirtyFieldsData, _isMoving);
-                _playerData._isMoving = _isMoving;
             }
 
             // Reset all the dirty fields
             for (int i = 0; i < _dirtyFields.Length; i++)
 				_dirtyFields[i] = 0;
 
-            /// send player data
-            _playerData.BMSData = dirtyFieldsData.CompressBytes().ToString();
+			/// send player data
+			_playerData.BMSData = Convert.ToBase64String(dirtyFieldsData.CompressBytes());
 
             PTK.ArenaObservable.PlayerData[] objs = { _playerData };
             string json = _playerData.ToJson<PTK.ArenaObservable.PlayerData>(objs, false);

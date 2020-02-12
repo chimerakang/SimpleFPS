@@ -19,7 +19,6 @@ namespace PTK
         {
             var request = new SendStatisticsRequest
             {
-                RequestID = (int)AnsuzRequestID.SendStatistics,
                 ArenaID = Ansuz.Instance.ArenaID,
                 SessionToken = Ansuz.Instance.SessionToken,
                 Statistics = json,
