@@ -3,51 +3,81 @@ using System.Collections;
 using System.Text;
 using UniRx;
 using UnityEngine;
-using uPLibrary.Networking.M2Mqtt.Messages;
 
 namespace PTK
 {
-    [Serializable]
-    public class ArenaData
+    interface IMsgReceived
     {
+        void OnReceivedMsg(string msg);
+    }
+
+    [Serializable]
+    public class ArenaData: IMsgReceived
+    {
+        public int UID;
         public int RequestID;
-        public string Timestamp;
         public string ArenaID;
-        public string StringData;
+        public string BMSData;
+        public event Action<string> MessageReceived;
 
         public ArenaData()
         {
-            Timestamp = DateTime.Now.Ticks.ToString();
+            UID = -1;
+        }
+
+        public void OnReceivedMsg(string msg)
+        {
+            if( MessageReceived != null)
+            {
+                MessageReceived(msg);
+            }
+        }
+
+        public T[] FromJson<T>(string json)
+        {
+            Wrapper<T> wrapper = JsonUtility.FromJson<Wrapper<T>>(json);
+            return wrapper.Items;
+        }
+
+        public string ToJson<T>(T[] array, bool prettyPrint)
+        {
+            Wrapper<T> wrapper = new Wrapper<T>();
+            wrapper.Items = array;
+            return JsonUtility.ToJson(wrapper, prettyPrint);
+        }
+
+        [Serializable]
+        private class Wrapper<T>
+        {
+            public T[] Items;
         }
     }
-
-    
-
-    
 
     public class ArenaReceiver<T> where T : ArenaData, new()
     {
         Ansuz ansuz;
-        String topic;
-        String ownArenaID;
+        int uid;
+        string topic;
+        string arenaID;
         int ownRequestID;
         bool _msgReceived = false;
         string _receivedMsg;
 
-        public ArenaReceiver(Ansuz instance, String subscribeTopic, string arenaID, int requestID)
+        public ArenaReceiver(Ansuz instance, string subscribeTopic, int requestID)
         {
             ansuz = instance;
             topic = subscribeTopic;
-            ownArenaID = arenaID;
+
+            arenaID = instance.ArenaID;
+            uid = instance.UID;
             ownRequestID = requestID;
+            ///instance.RegisterReceiver(subscribeTopic, this);
         }
 
-        void OnReceivedMsg(MqttMsgPublishEventArgs mqttMsg)
+        void OnReceivedMsg(string receivedMsg)
         {
-            var receivedMsg = Encoding.UTF8.GetString(mqttMsg.Message);
             var data = JsonUtility.FromJson<T>(receivedMsg);
-            /*
-            if (data.RequestID == ownRequestID && !data.ArenaID.Equals(ownArenaID) )
+            if ( (data.RequestID == ownRequestID) && (data.UID != uid ) )
             {
                 Debug.Log("ArenaReceiver Received Msg |> = " + receivedMsg);
                 _msgReceived = true;
@@ -70,12 +100,12 @@ namespace PTK
                     Ansuz.Instance.Geterrorstring();
                 }
             }
-            */
+            
         }
 
-        public IEnumerator Worker(IObserver<T> observer)
+        public IEnumerator Receiver(IObserver<T> observer)
         {
-            ansuz.OnReceivedMsg += OnReceivedMsg;
+            /// ansuz.OnReceivedMsg += OnReceivedMsg;
 
             if (_msgReceived)
             {
@@ -88,15 +118,16 @@ namespace PTK
         }
     }
 
+
     public static partial class ArenaObservable
     {
-        public static IObservable<T> RegisterReceiver<T>(String subscribeTopic, string arenaID, int requestID) where T : ArenaData, new()
+        public static IObservable<T> RegisterReceiver<T>(String subscribeTopic, int requestID) where T : ArenaData, new()
         {
+            ArenaReceiver<T> receiver = new ArenaReceiver<T>(Ansuz.Instance, subscribeTopic, requestID);
             return Observable.FromCoroutine<T>(observer =>
-               new ArenaReceiver<T>(Ansuz.Instance, subscribeTopic, arenaID, requestID)
-                    .Worker(observer))
-                    .SubscribeOnMainThread();
+                receiver
+                .Receiver(observer))
+                .SubscribeOnMainThread();
         }
     }
-
 }

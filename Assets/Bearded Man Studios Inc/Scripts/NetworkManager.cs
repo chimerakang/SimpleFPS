@@ -66,8 +66,14 @@ namespace BeardedManStudios.Forge.Networking.Unity
             if (!PTK.Ansuz.Ansuzinitialized)
             {
                 ansuzClient = gameObject.AddComponent<PTK.Ansuz>();
+
+                PTK.ArenaObservable.PlayerData playerData = new PTK.ArenaObservable.PlayerData();
+                ansuzClient.RegisterReceiver("arena/playerData/all", 0, playerData);
+                playerData.MessageReceived += PlayerDataReceived;
+
                 ansuzClient.OnConnected += arenaConnected;
                 ansuzClient.OnDisconnected += arenaDisonnected;
+                ansuzClient.StartConnect();
             }
 
         }
@@ -78,11 +84,12 @@ namespace BeardedManStudios.Forge.Networking.Unity
             PTK.ObservableAusuz.GetArenaID()
                 .Subscribe(result =>
                 {
-                    Debug.Log("arena id:" + result.ArenaID + ",session token:" + result.SessionToken + ", isMaster:" + result.IsMaster);
+                    Debug.Log("arena id:" + result.ArenaID + ",session token:" + result.SessionToken + ", isMaster:" + result.IsMaster + ", UID:" + result.UID );
                     ansuzClient.SessionToken = result.SessionToken;
                     ansuzClient.ArenaID = result.ArenaID;
+                    ansuzClient.UID = result.UID;
                     ansuzClient.IsMaster = result.IsMaster;
-                    if (result.IsMaster)
+                    if (result.IsMaster && result.UID > 0)
                     {
                         Networker.playerAccepted += PlayerAcceptedSceneSetup;
                     }
@@ -98,11 +105,18 @@ namespace BeardedManStudios.Forge.Networking.Unity
 							for (int i = 1; i < loadedScenes.Count; i++)
 								SceneManager.LoadSceneAsync(loadedScenes[i], LoadSceneMode.Additive);
 						});
-
-
 					}
 
-					if (OnConnected != null)
+                    PTK.ObservableAusuz.GetAppVersion()
+                        .Subscribe(versionResult =>
+                        {
+                            Debug.Log("arena version:" + versionResult.AppVersion + ",build:" + versionResult.Builds);
+                        },
+                            e => Debug.Log(e)
+                        );
+
+
+                    if (OnConnected != null)
                     {
                         OnConnected(ansuzClient.IsMaster);
                     }
@@ -110,21 +124,12 @@ namespace BeardedManStudios.Forge.Networking.Unity
                 },
                     e => Debug.Log(e)
                 );
+        }
 
-            PTK.ObservableAusuz.GetAppVersion()
-                .Subscribe(result =>
-                {
-                    Debug.Log("arena version:" + result.AppVersion + ",build:" + result.Builds);
-                },
-                    e => Debug.Log(e)
-                );
-
-            PTK.ArenaObservable.PlayerDataReceiver("", ansuzClient.ArenaID, (int)PTK.AnsuzRequestID.SendPlayerModel )
-                .Subscribe(result =>
-                {
-                    Debug.Log("receive player model data:" + result.StringData );
-                }, e => Debug.Log(e) );
-
+        private void PlayerDataReceived( string msg )
+        {
+            Debug.Log("PlayerDataReceived :" + msg );
+            
         }
 
         private void arenaDisonnected()
@@ -134,10 +139,6 @@ namespace BeardedManStudios.Forge.Networking.Unity
             {
                 OnDisconnected();
             }
-        }
-
-        void OnReceivedMsg(MqttMsgPublishEventArgs mqttMsg)
-        {
         }
 
         private void OnEnable()

@@ -1,11 +1,13 @@
 ﻿using CielaSpike;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using uPLibrary.Networking.M2Mqtt;
 using uPLibrary.Networking.M2Mqtt.Messages;
 using UniRx;
+using UniRx.Triggers;
 
 namespace PTK
 {
@@ -14,9 +16,11 @@ namespace PTK
         public static bool Ansuzinitialized = false;
         public static Ansuz Instance { get; private set; }
 
+        public int UID;
         public string ArenaID;
         public string SessionToken;
         public bool IsMaster = false;
+        public string DeviceID = "";
 
         string BrokerHostName = "notice.com.tw";
         int BrokerPort = 29001;
@@ -35,15 +39,57 @@ namespace PTK
         bool hasopenwindow = false;
         bool hasstartreconnect = false;
         int timeouttime = 0;
+        private Dictionary<string, ArenaData> _receiverMap = new Dictionary<string, ArenaData>();
+        private Dictionary<string, byte> _qosMap = new Dictionary<string, byte>();
+
+        void Awake()
+        {
+            Init();
+        }
+
+        private void OnDestroy()
+        {
+            Debug.Log("[Arena] OnDestroy");
+            OnConnected -= ReadyReConnect;
+            UnsubsribeEvents();
+            Disconnect();
+            Instance = null;
+        }
+
+        public void Init()
+        {
+            if (Instance != null)
+            {
+                enabled = false;
+                DestroyImmediate(this);
+                return;
+            }
+            Instance = this;
+
+            GetDeviceToken();
+            
+            string defaultTopic = "arena/" + DeviceID;
+            _qosMap[defaultTopic] = MqttMsgBase.QOS_LEVEL_AT_LEAST_ONCE;
+            
+            Ansuzinitialized = true;
+        }
+
+        public void StartConnect()
+        {
+            _waitForReconnect = new WaitForSeconds(reconnectInterval);
+            Observable.FromCoroutine(CreateClient).SelectMany(ConnectLoop(DeviceID, "", "")).Subscribe().AddTo(this);
+            OnConnected += ReadyReConnect;
+        }
+
 
         string PublishTopic
         {
-            get { return "arena/user/" + SystemInfo.deviceUniqueIdentifier; }
+            get { return "arena/user/" + DeviceID; }
         }
 
         string SubscribeTopic
         {
-            get { return "arena/" + SystemInfo.deviceUniqueIdentifier + "/#"; }
+            get { return "arena/" + DeviceID + "/#"; }
         }
 
         string DeviceToken
@@ -73,7 +119,7 @@ namespace PTK
 
             ushort msgId = _client.Publish(PublishTopic,
                 Encoding.UTF8.GetBytes(message),
-                MqttMsgBase.QOS_LEVEL_AT_MOST_ONCE,
+                MqttMsgBase.QOS_LEVEL_AT_LEAST_ONCE,
                 false);
 
             Debug.Log("Publish :> Id ( " + msgId + " ) msg => " + message);
@@ -95,37 +141,30 @@ namespace PTK
             return true;
         }
 
-
-        void Awake()
+        public bool PublishBytes(string topic, byte[] compress, byte qos)
         {
-            Init();
+            if (_client == null)
+                return false;
+
+            if (!_client.IsConnected)
+                return false;
+
+            ushort msgId = _client.Publish(topic, compress, qos, false);
+            return true;
         }
 
-        private void OnDestroy()
+
+        public void RegisterReceiver(string topic, byte qos, ArenaData reveiver)
         {
-            Debug.Log("[Arena] OnDestroy");
-            OnConnected -= ReadyReConnect;
-            UnsubsribeEvents();
-            Disconnect();
-            Instance = null;
+            _receiverMap.Add(topic, reveiver);
+            _qosMap.Add(topic, qos);
         }
 
-        public void Init()
+        public void UnregisterReceiver(string topic)
         {
-            if (Instance != null)
-            {
-                enabled = false;
-                DestroyImmediate(this);
-                return;
-            }
-            Instance = this;
-
-            _waitForReconnect = new WaitForSeconds(reconnectInterval);
-            string deviceId = SystemInfo.deviceUniqueIdentifier;
-            Observable.FromCoroutine(CreateClient).SelectMany(ConnectLoop(deviceId, "", "")).Subscribe().AddTo(this);
-            OnConnected += ReadyReConnect;
-            Ansuzinitialized = true;
+            _receiverMap.Remove(topic);
         }
+
 
         void Disconnect()
         {
@@ -212,8 +251,23 @@ namespace PTK
 
         void OnMqttMsgReceived(object sender, MqttMsgPublishEventArgs e)
         {
-            if (OnReceivedMsg != null)
-                OnReceivedMsg(e);
+            /*
+                */
+            string topic = e.Topic;
+            if( topic != null && topic.Length > 0 && _receiverMap.ContainsKey(topic) )
+            {
+                ArenaData arenaData = _receiverMap[topic];
+                if( arenaData != null)
+                {
+                    var receivedMsg = Encoding.UTF8.GetString(e.Message);
+                    arenaData.OnReceivedMsg(receivedMsg);
+                }
+            }
+            else
+            {
+                if (OnReceivedMsg != null)
+                    OnReceivedMsg(e);
+            }
         }
 
         void SubscribeEvents()
@@ -221,10 +275,15 @@ namespace PTK
             if (_subscribed)
                 return;
 
-            _client.Subscribe(new string[] { SubscribeTopic },
-                new byte[] { MqttMsgBase.QOS_LEVEL_AT_LEAST_ONCE });
+            List<string> topicList = new List<string>();
+            List<byte> qosList = new List<byte>();
+            foreach ( var qosMap in _qosMap )
+            {
+                topicList.Add(qosMap.Key);
+                qosList.Add(qosMap.Value);
+            }
+            _client.Subscribe(topicList.ToArray(), qosList.ToArray());
             _client.MqttMsgPublishReceived += OnMqttMsgReceived;
-
             _subscribed = true;
         }
 
@@ -232,14 +291,21 @@ namespace PTK
         {
             if (_subscribed)
             {
-                _client.Unsubscribe(new string[] { SubscribeTopic });
+                List<string> topicList = new List<string>();
+                foreach (var qosMap in _qosMap)
+                {
+                    topicList.Add(qosMap.Key);
+                }
+                _client.Unsubscribe(topicList.ToArray());
+
+                ///_client.Unsubscribe(new string[] { SubscribeTopic });
                 _client.MqttMsgPublishReceived -= OnMqttMsgReceived;
 
                 _subscribed = false;
             }
         }
 
-        public static string GetDeviceToken()
+        public string GetDeviceToken()
         {
 #if UNITY_IOS
             byte[] token = NotificationServices.deviceToken;
@@ -248,10 +314,12 @@ namespace PTK
                 Debug.LogWarning("iOS deviceToken is null");
                 return "null";
             }
-                        
-            return BitConverter.ToString(token).Replace("-", "");
+                
+            DeviceID = BitConverter.ToString(token).Replace("-", "");
+#else
+            DeviceID = SystemInfo.deviceUniqueIdentifier;
 #endif
-            return SystemInfo.deviceUniqueIdentifier;
+            return DeviceID;
         }
 
         public void Geterrorcode()

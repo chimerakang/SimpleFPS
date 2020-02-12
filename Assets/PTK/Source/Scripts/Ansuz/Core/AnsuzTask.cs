@@ -16,13 +16,11 @@ namespace PTK
 
         bool _msgReceived = false;
         string _receivedMsg;
-        string timestamp;
         string _requestJson;
 
         public AnsuzTask(Ansuz instance, AnsuzRequest request)
         {
             ansuz = instance;
-            timestamp = request.Timestamp;
             _requestJson = JsonUtility.ToJson(request);
         }
 
@@ -31,7 +29,7 @@ namespace PTK
             var receivedMsg = Encoding.UTF8.GetString(mqttMsg.Message);
             var data = JsonUtility.FromJson<T>(receivedMsg);
 
-            if (data.Timestamp.Equals(timestamp))
+            ///if (data.RequestID == ansuz.UID )
             {
                 _msgReceived = true;
                 _receivedMsg = receivedMsg;

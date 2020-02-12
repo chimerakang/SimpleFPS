@@ -1,20 +1,20 @@
 ﻿using System;
+using UnityEngine;
 
 namespace PTK
 {
     public static partial class ArenaObservable
     {
         [Serializable]
-        public class PlayerData : ArenaData
+        public class PlayerData : ArenaData, IMsgReceived
         {
-            public bool IsMaster;
+            public Vector3 _position;
+            public Vector3 _spineRotation;
+            public Quaternion _rotation;
+            public float _vertical;
+            public float _horizontal;
+            public bool _isMoving;
         }
-
-        public static UniRx.IObservable<PlayerData> PlayerDataReceiver(String subscribeTopic, string arenaID, int requestID)
-        {
-            return RegisterReceiver<PlayerData>(subscribeTopic, arenaID, requestID);
-        }
-
     }
 
 }

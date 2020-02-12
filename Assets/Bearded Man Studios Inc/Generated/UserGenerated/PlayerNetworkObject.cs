@@ -185,7 +185,9 @@ namespace BeardedManStudios.Forge.Networking.Generated
 			}
 		}
 
-		public void SetisMovingDirty()
+        PTK.ArenaObservable.PlayerData _playerData = new PTK.ArenaObservable.PlayerData();
+
+        public void SetisMovingDirty()
 		{
 			_dirtyFields[0] |= 0x20;
 			hasDirtyFields = true;
@@ -260,31 +262,47 @@ namespace BeardedManStudios.Forge.Networking.Generated
 			dirtyFieldsData.Clear();
 			dirtyFieldsData.Append(_dirtyFields);
 
-			if ((0x1 & _dirtyFields[0]) != 0)
-				UnityObjectMapper.Instance.MapBytes(dirtyFieldsData, _position);
+            if ((0x1 & _dirtyFields[0]) != 0)
+            {
+                UnityObjectMapper.Instance.MapBytes(dirtyFieldsData, _position);
+                _playerData._position = _position;
+            }
 			if ((0x2 & _dirtyFields[0]) != 0)
-				UnityObjectMapper.Instance.MapBytes(dirtyFieldsData, _rotation);
-			if ((0x4 & _dirtyFields[0]) != 0)
-				UnityObjectMapper.Instance.MapBytes(dirtyFieldsData, _spineRotation);
-			if ((0x8 & _dirtyFields[0]) != 0)
-				UnityObjectMapper.Instance.MapBytes(dirtyFieldsData, _vertical);
-			if ((0x10 & _dirtyFields[0]) != 0)
-				UnityObjectMapper.Instance.MapBytes(dirtyFieldsData, _horizontal);
-			if ((0x20 & _dirtyFields[0]) != 0)
-				UnityObjectMapper.Instance.MapBytes(dirtyFieldsData, _isMoving);
+            {
+                UnityObjectMapper.Instance.MapBytes(dirtyFieldsData, _rotation);
+                _playerData._rotation = _rotation;
+            }
+            if ((0x4 & _dirtyFields[0]) != 0)
+            {
+                UnityObjectMapper.Instance.MapBytes(dirtyFieldsData, _spineRotation);
+                _playerData._spineRotation = _spineRotation;
+            }
+            if ((0x8 & _dirtyFields[0]) != 0)
+            {
+                UnityObjectMapper.Instance.MapBytes(dirtyFieldsData, _vertical);
+                _playerData._vertical = _vertical;
+            }
+            if ((0x10 & _dirtyFields[0]) != 0)
+            {
+                UnityObjectMapper.Instance.MapBytes(dirtyFieldsData, _horizontal);
+                _playerData._horizontal = _horizontal;
+            }
+            if ((0x20 & _dirtyFields[0]) != 0)
+            {
+                UnityObjectMapper.Instance.MapBytes(dirtyFieldsData, _isMoving);
+                _playerData._isMoving = _isMoving;
+            }
 
-			// Reset all the dirty fields
-			for (int i = 0; i < _dirtyFields.Length; i++)
+            // Reset all the dirty fields
+            for (int i = 0; i < _dirtyFields.Length; i++)
 				_dirtyFields[i] = 0;
 
-            string stringData = System.Text.Encoding.UTF8.GetString(dirtyFieldsData.CompressBytes());
-            PTK.ObservableAusuz.SendPlayerModel(stringData)
-                .Subscribe(result =>
-                {
-                    ///Debug.Log("receive player model data");
-                },
-                    e => Debug.Log(e)
-                );
+            /// send player data
+            _playerData.BMSData = dirtyFieldsData.CompressBytes().ToString();
+
+            PTK.ArenaObservable.PlayerData[] objs = { _playerData };
+            string json = _playerData.ToJson<PTK.ArenaObservable.PlayerData>(objs, false);
+            PTK.Ansuz.Instance.PublishToTopic("arena/playerData/all", json, 0);
 
             return dirtyFieldsData;
 		}
@@ -419,9 +437,11 @@ namespace BeardedManStudios.Forge.Networking.Generated
 			if (readDirtyFlags == null)
 				readDirtyFlags = new byte[1];
 
-		}
+            _playerData.UID = PTK.Ansuz.Instance.UID;
+            _playerData.RequestID = (int)PTK.AnsuzRequestID.SendPlayerModel;
+        }
 
-		public PlayerNetworkObject() : base() { Initialize(); }
+        public PlayerNetworkObject() : base() { Initialize(); }
 		public PlayerNetworkObject(NetWorker networker, INetworkBehavior networkBehavior = null, int createCode = 0, byte[] metadata = null) : base(networker, networkBehavior, createCode, metadata) { Initialize(); }
 		public PlayerNetworkObject(NetWorker networker, uint serverId, FrameStream frame) : base(networker, serverId, frame) { Initialize(); }
 

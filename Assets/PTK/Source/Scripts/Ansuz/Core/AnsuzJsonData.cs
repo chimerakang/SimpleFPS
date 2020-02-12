@@ -6,13 +6,13 @@ namespace PTK
     public class AnsuzRequest
     {
         public int RequestID; 
-        public string Timestamp;
+        public int UID;
         public string SessionToken;
         public string ArenaID;
 
         public AnsuzRequest()
         {
-            Timestamp = DateTime.Now.Ticks.ToString();
+            UID = -1;
         }
     }
 
