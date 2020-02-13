@@ -19,6 +19,7 @@ namespace BeardedManStudios.Forge.Networking.Generated
 		private Vector3 _position;
 		public event FieldEvent<Vector3> positionChanged;
 		public InterpolateVector3 positionInterpolation = new InterpolateVector3() { LerpT = 0.15f, Enabled = true };
+        bool firstFrame = true;
 		public Vector3 position
 		{
 			get { return _position; }
@@ -185,7 +186,7 @@ namespace BeardedManStudios.Forge.Networking.Generated
 			}
 		}
 
-        PTK.ArenaObservable.PlayerData _playerData = new PTK.ArenaObservable.PlayerData();
+        public PTK.ArenaObservable.PlayerData _playerData = new PTK.ArenaObservable.PlayerData();
 
         public void SetisMovingDirty()
 		{
@@ -259,7 +260,22 @@ namespace BeardedManStudios.Forge.Networking.Generated
 
 		protected override BMSByte SerializeDirtyFields()
 		{
-			dirtyFieldsData.Clear();
+            if (firstFrame)
+            {
+                BMSByte bmsByte = new BMSByte();
+                bmsByte = WritePayload(bmsByte);
+              
+                PTK.ArenaObservable.FrameData _frameData = new PTK.ArenaObservable.FrameData();
+                _frameData.BMSData = Convert.ToBase64String(bmsByte.CompressBytes());
+                _frameData.UID = PTK.Ansuz.Instance.UID;
+                _frameData.GroupID = MessageGroupIds.VIEW_INITIALIZE;
+                PTK.ArenaObservable.FrameData[] objs = { _frameData };
+                string json = _frameData.ToJson<PTK.ArenaObservable.FrameData>(objs, false);
+                PTK.Ansuz.Instance.PublishToTopic("arena/frameData/all", json, 0);
+                firstFrame = false;
+            }
+
+            dirtyFieldsData.Clear();
 			dirtyFieldsData.Append(_dirtyFields);
 
             if ((0x1 & _dirtyFields[0]) != 0)
@@ -291,12 +307,6 @@ namespace BeardedManStudios.Forge.Networking.Generated
             for (int i = 0; i < _dirtyFields.Length; i++)
 				_dirtyFields[i] = 0;
 
-			/// send player data
-			_playerData.BMSData = Convert.ToBase64String(dirtyFieldsData.CompressBytes());
-
-            PTK.ArenaObservable.PlayerData[] objs = { _playerData };
-            string json = _playerData.ToJson<PTK.ArenaObservable.PlayerData>(objs, false);
-            PTK.Ansuz.Instance.PublishToTopic("arena/playerData/all", json, 0);
 
             return dirtyFieldsData;
 		}
@@ -389,10 +399,20 @@ namespace BeardedManStudios.Forge.Networking.Generated
 			}
 		}
 
-		public override void InterpolateUpdate()
-		{
-			if (IsOwner)
-				return;
+        public override void InterpolateUpdate()
+        {
+            if (IsOwner)
+            {
+                if( _dirtyFields[0] > 0)
+                {
+                    /// send player data
+                    _playerData.BMSData = Convert.ToBase64String(dirtyFieldsData.CompressBytes());
+                    PTK.ArenaObservable.PlayerData[] objs = { _playerData };
+                    string json = _playerData.ToJson<PTK.ArenaObservable.PlayerData>(objs, false);
+                    PTK.Ansuz.Instance.PublishToTopic("arena/playerData/all", json, 0);
+                }
+                return;
+            }
 
 			if (positionInterpolation.Enabled && !positionInterpolation.current.UnityNear(positionInterpolation.target, 0.0015f))
 			{
@@ -426,13 +446,29 @@ namespace BeardedManStudios.Forge.Networking.Generated
 			}
 		}
 
+        public void SetupUID( int uid )
+        {
+            _playerData.UID = uid;
+        }
+
 		private void Initialize()
 		{
 			if (readDirtyFlags == null)
 				readDirtyFlags = new byte[1];
 
-            _playerData.UID = PTK.Ansuz.Instance.UID;
             _playerData.RequestID = (int)PTK.AnsuzRequestID.SendPlayerModel;
+            if( IsOwner )
+            {
+                SetupUID(PTK.Ansuz.Instance.UID);
+
+                /// send player data
+                /*
+                _playerData.BMSData = Convert.ToBase64String(dirtyFieldsData.CompressBytes());
+                PTK.ArenaObservable.PlayerData[] objs = { _playerData };
+                string json = _playerData.ToJson<PTK.ArenaObservable.PlayerData>(objs, false);
+                PTK.Ansuz.Instance.PublishToTopic("arena/playerData/all", json, 0);
+                */
+            }
         }
 
         public PlayerNetworkObject() : base() { Initialize(); }

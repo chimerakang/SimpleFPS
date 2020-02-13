@@ -10,6 +10,8 @@ public class SpawnPlayer : MonoBehaviour
 {
     private List<Transform> spawnPoints = new List<Transform>();
     public List<Transform> SpawnPoints { get { return spawnPoints; } }
+    PTK.ArenaObservable.SpawnData _spawnData = new PTK.ArenaObservable.SpawnData();
+
     // Use this for initialization
     void Start()
     {        
@@ -23,7 +25,6 @@ public class SpawnPlayer : MonoBehaviour
         //Find a random spawnpoint from the list
         Vector3 randomSpawnPosition = spawnPoints[UnityEngine.Random.Range(0, spawnPoints.Count)].position;
         //Instantiate the player
-        
         NetworkManager.Instance.InstantiatePlayer(position: randomSpawnPosition);        
     }
 

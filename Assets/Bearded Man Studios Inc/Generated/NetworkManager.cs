@@ -29,9 +29,10 @@ namespace BeardedManStudios.Forge.Networking.Unity
 		
 		private void CaptureObjects(NetworkObject obj)
 		{
-			if (obj.CreateCode < 0)
-				return;
-				
+            ///if (obj.CreateCode < 0)
+            ///return;
+
+            obj.CreateCode = 0;
 			if (obj is ChatManagerNetworkObject)
 			{
 				MainThreadManager.Run(() =>

@@ -82,7 +82,7 @@ namespace BeardedManStudios.Forge.Networking.Unity
 
 				ansuzClient.OnConnected += arenaConnected;
                 ansuzClient.OnDisconnected += arenaDisonnected;
-                ansuzClient.StartConnect();
+                ansuzClient.StartConnect();                
             }
 
         }
@@ -100,21 +100,11 @@ namespace BeardedManStudios.Forge.Networking.Unity
                     ansuzClient.IsMaster = result.IsMaster;
                     if (result.IsMaster && result.UID > 0)
                     {
-                        Networker.playerAccepted += PlayerAcceptedSceneSetup;
+                        if( result.UID > 0 )
+                        {
+                            Networker.playerAccepted += PlayerAcceptedSceneSetup;
+                        }
                     }
-					else
-					{
-						MainThreadManager.Run(() =>
-						{
-							if (loadedScenes.Count == 0)
-								return;
-
-							SceneManager.LoadScene(loadedScenes[0], LoadSceneMode.Single);
-
-							for (int i = 1; i < loadedScenes.Count; i++)
-								SceneManager.LoadSceneAsync(loadedScenes[i], LoadSceneMode.Additive);
-						});
-					}
 
                     PTK.ObservableAusuz.GetAppVersion()
                         .Subscribe(versionResult =>
@@ -140,19 +130,37 @@ namespace BeardedManStudios.Forge.Networking.Unity
 			PTK.ArenaObservable.PlayerData playerData = new PTK.ArenaObservable.PlayerData();
 			PTK.ArenaObservable.PlayerData[] objs = playerData.FromJson<PTK.ArenaObservable.PlayerData>(msg);
 			var data = objs[0];
-			Debug.Log("playerDataReceived :" + data.BMSData );
-		}
+            if( data.UID != ansuzClient.UID )
+            {
+                Debug.Log("other playerDataReceived :" + data.BMSData);
+
+            }
+        }
 
 		private void frameDataReceived( string msg )
 		{
 			PTK.ArenaObservable.FrameData[] objs = _frameData.FromJson<PTK.ArenaObservable.FrameData>(msg);
 			var data = objs[0];
-			Debug.Log("frameDataReceived :" + data.BMSData);
+            BMSByte bmsByte = new BMSByte();
+            bmsByte = bmsByte.Clone(System.Convert.FromBase64String(data.BMSData), 0);
 
-			Binary frame = new Binary(System.Convert.FromBase64String(data.BMSData), 0, data.Group, null, 255 );
-			if (frame.GroupId == MessageGroupIds.VIEW_INITIALIZE)
+            Binary frame = new Binary(Networker.Time.Timestep, false, bmsByte, Receivers.Target, 0, true );
+            ///frame.ReadFrame();
+
+            /// check uid equal my own id
+            if( data.UID != ansuzClient.UID )
+            {
+                /// create player
+                Debug.Log("frameDataReceived :" + data.BMSData);
+                ///UDPClient Socket = new UDPClient();
+                ///Socket.Connect("127.0.0.1");
+                NetworkObject.Factory.NetworkCreateObject(Networker, 3, 0, frame, CreatePendingObjects);
+                ///PlayerNetworkObject newPlayer = new PlayerNetworkObject(Socket, 0, frame);
+            }
+
+            /*
+            if (frame.GroupId == MessageGroupIds.VIEW_INITIALIZE)
 			{
-				///if (Networker is IServer)
 				if (IsMaster)
 					return;
 
@@ -203,16 +211,8 @@ namespace BeardedManStudios.Forge.Networking.Unity
 			if (networkSceneChanging != null)
 				networkSceneChanging(sceneIndex, mode);
 
-			/*
-			MainThreadManager.Run(() =>
-			{
-				// Load the scene that the server loaded in the same LoadSceneMode
-				if (mode == LoadSceneMode.Additive)
-					SceneManager.LoadSceneAsync(sceneIndex, LoadSceneMode.Additive);
-				else if (mode == LoadSceneMode.Single)
-					SceneManager.LoadScene(sceneIndex, LoadSceneMode.Single);
-			});
-			*/
+            */
+
 		}
 
 		private void arenaDisonnected()
@@ -262,7 +262,7 @@ namespace BeardedManStudios.Forge.Networking.Unity
             */
 		}
 
-		private void CreatePendingObjects(NetworkObject obj)
+		public void CreatePendingObjects(NetworkObject obj)
 		{
 			INetworkBehavior behavior;
 
@@ -519,9 +519,9 @@ namespace BeardedManStudios.Forge.Networking.Unity
 				for (int i = 0; i < Networker.NetworkObjectList.Count; i++)
 					Networker.NetworkObjectList[i].InterpolateUpdate();
 			}
-		}
+        }
 
-		private void OnLevelFinishedLoading(Scene scene, LoadSceneMode mode)
+        private void OnLevelFinishedLoading(Scene scene, LoadSceneMode mode)
 		{
 			SceneReady(scene, mode);
 		}
@@ -598,12 +598,14 @@ namespace BeardedManStudios.Forge.Networking.Unity
 
 			SendFrame(sender, frame, player);
 
+            /*
 			/// send frame data
 			_frameData.BMSData = Convert.ToBase64String(frame.GetData());
-			_frameData.Group = MessageGroupIds.VIEW_INITIALIZE;
+			_frameData.GroupID = MessageGroupIds.VIEW_INITIALIZE;
 			PTK.ArenaObservable.FrameData[] objs = { _frameData };
 			string json = _frameData.ToJson<PTK.ArenaObservable.FrameData>(objs, false);
 			PTK.Ansuz.Instance.PublishToTopic("arena/frameData/all", json, 0);
+            */
 		}
 
 		private void ReadBinary(NetworkingPlayer player, Binary frame, NetWorker sender)
@@ -732,11 +734,14 @@ namespace BeardedManStudios.Forge.Networking.Unity
 			// Send the binary frame to either the server or the clients
 			SendFrame(Networker, frame);
 
+            /*
 			_frameData.BMSData = Convert.ToBase64String(frame.GetData());
-			_frameData.Group = MessageGroupIds.VIEW_CHANGE;
+			_frameData.GroupID = MessageGroupIds.VIEW_CHANGE;
+            _frameData.UID = ansuzClient.UID;
 			PTK.ArenaObservable.FrameData[] objs = { _frameData };
 			string json = _frameData.ToJson<PTK.ArenaObservable.FrameData>(objs, false);
 			PTK.Ansuz.Instance.PublishToTopic("arena/frameData/all", json, 0);
+            */
 
 			// Go through all of the current NetworkBehaviors in the order that Unity finds them in
 			// and associate them with the id that the network will be giving them as a lookup
@@ -781,7 +786,6 @@ namespace BeardedManStudios.Forge.Networking.Unity
 					return;
 			}
 
-			///if (Networker is IServer)
             if( IsMaster )
 			{
 				// Go through all of the pending NetworkBehavior objects and initialize them on the network

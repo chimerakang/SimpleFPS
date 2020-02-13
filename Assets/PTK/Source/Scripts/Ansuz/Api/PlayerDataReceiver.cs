@@ -13,8 +13,15 @@ namespace PTK
         [Serializable]
         public class FrameData : ArenaData, IMsgReceived
         {
-            public int Group;
+            public int GroupID;
         }
+
+        [Serializable]
+        public class SpawnData : ArenaData, IMsgReceived
+        {
+            public int SpawnID;
+        }
+
     }
 
 }

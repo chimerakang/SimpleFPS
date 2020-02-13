@@ -10,8 +10,8 @@ namespace PTK
         AnsuzLogin = 3,
         SendDeviceToken = 4,
         SendFrameData = 5,
-        SendSongRecord = 6,
-        SendChallengeRecord = 7,
+        CreatePlayer = 6,
+        JoinGroup = 7,
         GetAppVersion = 8,
         SendPlayerModel = 9,
     }

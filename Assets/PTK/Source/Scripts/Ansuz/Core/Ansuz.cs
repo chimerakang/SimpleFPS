@@ -136,7 +136,7 @@ namespace PTK
                 return false;
 
             ushort msgId = _client.Publish(topic, Encoding.UTF8.GetBytes(message), qos, false);
-            Debug.Log("PublishToTopic :> Id ( " + msgId + " ) msg => " + message);
+            ///Debug.Log("PublishToTopic :> Id ( " + msgId + " ) msg => " + message);
 
             return true;
         }
