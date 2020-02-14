@@ -48,7 +48,8 @@ public class SetupPlayer : MonoBehaviour
     private void NetworkStart()
     {
         //if we are the owner, find what values we the player customization should use. (Gets saved into player prefs on the main menu)
-        if (np.networkObject.IsOwner)
+        ///if (np.networkObject.IsOwner)
+        if (!np.networkObject.IsRemote)
         {
             var playerName = PlayerPrefs.GetString("PlayerName");
             var skinIndex = PlayerPrefs.GetInt("PlayerSkinIndex");

@@ -72,18 +72,23 @@ public class NetworkedPlayer : PlayerBehavior
 
         //make a dynamic bool depending on we are the owner or not, and define the logic in the inspector.
         //eg some scripts should be disabled on non owners
-        ownerScripts.Invoke(networkObject.IsOwner);
+        if (!networkObject.IsRemote)
+        {
+            ownerScripts.Invoke(networkObject.IsOwner);
+        }
 
         //Get the player camera
         playerCamera = GetComponentInChildren<Camera>();
 
 
         //Disable the camera if we aren't the owner
-        if (!networkObject.IsOwner)
+        ///if (!networkObject.IsOwner)
+        if( networkObject.IsRemote )
         {
             playerCamera.gameObject.SetActive(false);
         }
-        else if (networkObject.IsOwner)
+        ///else if (networkObject.IsOwner)
+        else if(!networkObject.IsRemote)
         {
             //Enable the HUD if we are the owner (it's disabled in the prefab)
             HUD.SetActive(true);
@@ -136,7 +141,8 @@ public class NetworkedPlayer : PlayerBehavior
     // Update is called once per frame
     void FixedUpdate()
     {
-        if (networkObject.IsOwner)
+        ///if (networkObject.IsOwner)
+        if(!networkObject.IsRemote)
         {
             //set the position and the rotation 
             networkObject.position = transform.position;

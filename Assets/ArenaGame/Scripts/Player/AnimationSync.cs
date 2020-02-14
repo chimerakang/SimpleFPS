@@ -22,7 +22,8 @@ public class AnimationSync : MonoBehaviour
     void Update()
     {
         //if we are the owner
-        if (np.networkObject.IsOwner)
+        ///if (np.networkObject.IsOwner)
+        if( !np.networkObject.IsRemote )
         {
             var horizontal = Input.GetAxis("Horizontal");
             var vertical = Input.GetAxis("Vertical");

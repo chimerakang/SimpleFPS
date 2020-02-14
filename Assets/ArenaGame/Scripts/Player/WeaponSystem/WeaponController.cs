@@ -115,7 +115,8 @@ public class WeaponController : MonoBehaviour
     {
         //hide the world and/or viewmodels accordingly if you are the owner or not
         //The camera only shows certain layers
-        if (np.networkObject.IsOwner)
+        ///if (np.networkObject.IsOwner)
+        if( !np.networkObject.IsRemote )
         {
             foreach (var child in worldModels)
             {
@@ -192,7 +193,8 @@ public class WeaponController : MonoBehaviour
         reloadCoroutine = StartCoroutine(StartReload(currentWeapon.reloadTime));
 
         //set the view model reload animation, only on owners as that's where the viewmodels are
-        if (np.networkObject.IsOwner)
+        ///if (np.networkObject.IsOwner)
+        if( !np.networkObject.IsRemote )
         {
             viewModelAnimator.SetTrigger("reload");
         }
@@ -225,7 +227,8 @@ public class WeaponController : MonoBehaviour
     void Update()
     {
         //Don't do anything if we aren't the owner
-        if (!np.networkObject.IsOwner)
+        ///if (!np.networkObject.IsOwner)
+        if( np.networkObject.IsRemote )
         {
             return;
         }
@@ -350,7 +353,8 @@ public class WeaponController : MonoBehaviour
             worldModelAnimator.SetTrigger("shoot");
 
             //If we aren't the owner of the object (think local player), do the world model muzzleflash
-            if (!np.networkObject.IsOwner)
+            ///if (!np.networkObject.IsOwner)
+            if( np.networkObject.IsRemote )
             {
                 //If the corountine is already running, stop it.
                 if (worldModelMuzzleFlashCorountine != null)
@@ -403,7 +407,8 @@ public class WeaponController : MonoBehaviour
             currentWeapon.viewModel.SetActive(true);
             currentWeapon.worldModel.SetActive(true);
             worldModelAnimator.SetBool("HasWeapon", true);
-            if (np.networkObject.IsOwner)
+            //if (np.networkObject.IsOwner)
+            if( !np.networkObject.IsRemote )
             {
                 viewModelAnimator.SetBool("HasWeapon", true);
             }
@@ -411,7 +416,8 @@ public class WeaponController : MonoBehaviour
         else //The current weapon is the hands
         {
             worldModelAnimator.SetBool("HasWeapon", false);
-            if (np.networkObject.IsOwner)
+            ///if (np.networkObject.IsOwner)
+            if (!np.networkObject.IsRemote)
             {
                 viewModelAnimator.SetBool("HasWeapon", false);
             }
@@ -423,14 +429,16 @@ public class WeaponController : MonoBehaviour
         if (currentWeapon.primary)
         {
             worldModelAnimator.SetBool("primary", true);
-            if (np.networkObject.IsOwner)
+            ///if (np.networkObject.IsOwner)
+            if (!np.networkObject.IsRemote)
             {
                 viewModelAnimator.SetBool("primary", true);
             }
         }
         else
         {
-            if (np.networkObject.IsOwner)
+            ///if (np.networkObject.IsOwner)
+            if (!np.networkObject.IsRemote)
             {
                 viewModelAnimator.SetBool("primary", false);
             }

@@ -77,7 +77,6 @@ namespace BeardedManStudios.Forge.Networking.Unity
 				_frameData.UID = PTK.Ansuz.Instance.UID;
 				_frameData.RequestID = (int)PTK.AnsuzRequestID.SendFrameData;
 				ansuzClient.RegisterTopic("arena/frameData/#", 0);
-				///_frameData.MessageReceived += frameDataReceived;
 
 				ansuzClient.OnConnected += arenaConnected;
                 ansuzClient.OnDisconnected += arenaDisonnected;
@@ -128,104 +127,33 @@ namespace BeardedManStudios.Forge.Networking.Unity
         {
 			PTK.ArenaObservable.PlayerData playerData = new PTK.ArenaObservable.PlayerData();
 			PTK.ArenaObservable.PlayerData[] objs = playerData.FromJson<PTK.ArenaObservable.PlayerData>(msg);
-            var data = objs[0];
+
             BMSByte bmsByte = new BMSByte();
-            bmsByte = bmsByte.Clone(System.Convert.FromBase64String(data.BMSData), 0);
-            Binary frame = new Binary(Networker.Time.Timestep, false, bmsByte, Receivers.Target, 0, true);
-
-            if ( data.UID != ansuzClient.UID )
+            foreach ( var data in objs )
             {
-                Debug.Log("other playerDataReceived :" + data.BMSData);
-                switch( data.RequestID )
-                {
-                    case (int)PTK.AnsuzRequestID.CreatePlayer:
-                        NetworkObject.Factory.NetworkCreateObject(Networker, 3, (uint)data.UID, frame, CreateObjects);
-                        break;
+                bmsByte = bmsByte.Clone(System.Convert.FromBase64String(data.BMSData), 0);
+                Binary frame = new Binary(Networker.Time.Timestep, false, bmsByte, Receivers.Target, 0, true);
 
-                    default:
-                        Debug.Log("not definition request" + data.RequestID);
-                        break;
+                if (data.UID != ansuzClient.UID)
+                {
+                    Debug.Log("other playerDataReceived :" + data.BMSData);
+                    switch (data.RequestID)
+                    {
+                        case (int)PTK.AnsuzRequestID.CreatePlayer:
+                            NetworkObject.Factory.NetworkCreateObject(Networker, 3, (uint)data.UID, frame, CreateObjects);
+                            break;
+
+                        default:
+                            Debug.Log("not definition request" + data.RequestID);
+                            break;
+                    }
                 }
+                frame = null;
             }
+            bmsByte = null;
+            playerData = null;
         }
 
-		private void frameDataReceived( string msg )
-		{
-			PTK.ArenaObservable.FrameData[] objs = _frameData.FromJson<PTK.ArenaObservable.FrameData>(msg);
-			var data = objs[0];
-            BMSByte bmsByte = new BMSByte();
-            bmsByte = bmsByte.Clone(System.Convert.FromBase64String(data.BMSData), 0);
-
-            Binary frame = new Binary(Networker.Time.Timestep, false, bmsByte, Receivers.Target, 0, true );
-            ///frame.ReadFrame();
-
-            /// check uid equal my own id
-            if( data.UID != ansuzClient.UID )
-            {
-                /// create player
-                Debug.Log("frameDataReceived :" + data.BMSData);
-                ///UDPClient Socket = new UDPClient();
-                ///Socket.Connect("127.0.0.1");
-                ///NetworkObject.Factory.NetworkCreateObject(Networker, 3, (uint)data.UID, frame, CreateObjects);
-                ///PlayerNetworkObject newPlayer = new PlayerNetworkObject(Socket, 0, frame);
-            }
-
-            /*
-            if (frame.GroupId == MessageGroupIds.VIEW_INITIALIZE)
-			{
-				if (IsMaster)
-					return;
-
-				int count = frame.StreamData.GetBasicType<int>();
-
-				loadedScenes.Clear();
-				for (int i = 0; i < count; i++)
-					loadedScenes.Add(frame.StreamData.GetBasicType<int>());
-
-				MainThreadManager.Run(() =>
-				{
-					if (loadedScenes.Count == 0)
-						return;
-
-					SceneManager.LoadScene(loadedScenes[0], LoadSceneMode.Single);
-
-					for (int i = 1; i < loadedScenes.Count; i++)
-						SceneManager.LoadSceneAsync(loadedScenes[i], LoadSceneMode.Additive);
-				});
-
-				return;
-			}
-
-			if (frame.GroupId != MessageGroupIds.VIEW_CHANGE)
-				return;
-
-			if (IsMaster)
-			{
-				// The client has loaded the scene
-				///if (playerLoadedScene != null)
-					///playerLoadedScene(player, Networker);
-
-				return;
-			}
-
-			// We need to halt the creation of network objects until we load the scene
-			Networker.PendCreates = true;
-
-			// Get the scene index that the server loaded
-			int sceneIndex = frame.StreamData.GetBasicType<int>();
-
-			// Get the mode in which the server loaded the scene
-			int modeIndex = frame.StreamData.GetBasicType<int>();
-
-			// Convert the int mode to the enum mode
-			LoadSceneMode mode = (LoadSceneMode)modeIndex;
-
-			if (networkSceneChanging != null)
-				networkSceneChanging(sceneIndex, mode);
-
-            */
-
-		}
 
 		private void arenaDisonnected()
         {

@@ -13,7 +13,7 @@ namespace PTK
         [Serializable]
         public class FrameData : ArenaData, IMsgReceived
         {
-            public int GroupID;
+            public int FrameCount;
         }
 
         [Serializable]

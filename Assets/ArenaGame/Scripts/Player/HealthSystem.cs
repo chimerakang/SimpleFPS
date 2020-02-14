@@ -114,11 +114,12 @@ public class HealthSystem : MonoBehaviour
         if (OnPlayerTakeDamage != null)
         {
             OnPlayerTakeDamage();
-        }        
+        }
 
         //Do a lil' camera shake for impact
-        if (np.networkObject.IsOwner)
-        {            
+        ///if (np.networkObject.IsOwner)
+        if (!np.networkObject.IsRemote)
+        {
             camShake.DoCameraShake(1.0f, 0.1f);
         }
 
@@ -201,7 +202,8 @@ public class HealthSystem : MonoBehaviour
         }
 
         //respawn to a spawnPosition
-        if (np.networkObject.IsOwner)
+        ///if (np.networkObject.IsOwner)
+        if (!np.networkObject.IsRemote)
         {
             //find a random spawnposition from the SpawnPlayer scripts spawnpoints
             Vector3 randomSpawnPosition = playerSpawn.SpawnPoints[UnityEngine.Random.Range(0, playerSpawn.SpawnPoints.Count-1)].position;

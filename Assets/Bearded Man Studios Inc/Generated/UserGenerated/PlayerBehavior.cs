@@ -36,7 +36,8 @@ namespace BeardedManStudios.Forge.Networking.Generated
 
 			networkObject.onDestroy += DestroyGameObject;
 
-			if (!obj.IsOwner)
+			///if (!obj.IsOwner)
+            if( networkObject.IsRemote )
 			{
 				if (!skipAttachIds.ContainsKey(obj.NetworkId))
 					ProcessOthers(gameObject.transform, obj.NetworkId + 1);
@@ -76,8 +77,11 @@ namespace BeardedManStudios.Forge.Networking.Generated
 			MainThreadManager.Run(() =>
 			{
 				NetworkStart();
-				networkObject.Networker.FlushCreateActions(networkObject);
-			});
+                if( !networkObject.IsRemote )
+                {
+                    networkObject.Networker.FlushCreateActions(networkObject);
+                }
+            });
 		}
 
 		protected override void CompleteRegistration()

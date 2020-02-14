@@ -37,7 +37,7 @@ namespace BeardedManStudios.Forge.Networking.Generated
                         ///obj = new PlayerNetworkObject(networker, id, frame);
                         obj = new PlayerNetworkObject();
                         PlayerNetworkObject playerObj = (PlayerNetworkObject)obj;
-                        playerObj.SetupUID((int)id);
+                        playerObj.SetupUID((int)id, true);
                         break;
 					case WeaponPickupNetworkObject.IDENTITY:
 						availableCallback = true;

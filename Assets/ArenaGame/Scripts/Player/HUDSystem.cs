@@ -105,7 +105,8 @@ public class HUDSystem : MonoBehaviour
     private void UIOnPlayerDie(string attackerName)
     {
         //only do hud if we are the owner
-        if (np.networkObject.IsOwner)
+        ///if (np.networkObject.IsOwner)
+        if (!np.networkObject.IsRemote)
         {
             deathText.gameObject.SetActive(true);
             respawnCounterText.gameObject.SetActive(true);
@@ -153,8 +154,9 @@ public class HUDSystem : MonoBehaviour
     private void UIOnPlayerTakeDamage()
     {
         //only do HUD on the owner
-        if (np.networkObject.IsOwner)
-        {  
+        ///if (np.networkObject.IsOwner)
+        if (!np.networkObject.IsRemote)
+        {
             //set the HP text
             string hpText = "HP: " + hpSystem.Health;
             HPText.text = hpText;
@@ -176,7 +178,8 @@ public class HUDSystem : MonoBehaviour
     private void UIOnPlayerRespawn()
     {
         //only do HUD on owner
-        if (np.networkObject.IsOwner)
+        ///if (np.networkObject.IsOwner)
+        if (!np.networkObject.IsRemote)
         {
             //show the hp text again on respawn and set it's value
             HPText.gameObject.SetActive(true);
@@ -191,7 +194,8 @@ public class HUDSystem : MonoBehaviour
     private void UIOnReload(float time)
     {
         //only do HUD on the owner
-        if (np.networkObject.IsOwner)
+        ///if (np.networkObject.IsOwner)
+        if (!np.networkObject.IsRemote)
         {
             //Ensure the coroutine is stopped before using it again
             if (reloadCoroutine != null)
@@ -245,7 +249,8 @@ public class HUDSystem : MonoBehaviour
 
     void Update()
     {
-        if (np && np.networkObject.IsOwner)
+        ///if (np && np.networkObject.IsOwner)
+        if (np && !np.networkObject.IsRemote)
         {
             if (Application.isEditor)
             {
