@@ -76,9 +76,8 @@ namespace BeardedManStudios.Forge.Networking.Unity
 
 				_frameData.UID = PTK.Ansuz.Instance.UID;
 				_frameData.RequestID = (int)PTK.AnsuzRequestID.SendFrameData;
-				ansuzClient.RegisterReceiver("arena/frameData/all", 0, _frameData);
-				_frameData.MessageReceived += frameDataReceived;
-
+				ansuzClient.RegisterTopic("arena/frameData/#", 0);
+				///_frameData.MessageReceived += frameDataReceived;
 
 				ansuzClient.OnConnected += arenaConnected;
                 ansuzClient.OnDisconnected += arenaDisonnected;
@@ -129,11 +128,24 @@ namespace BeardedManStudios.Forge.Networking.Unity
         {
 			PTK.ArenaObservable.PlayerData playerData = new PTK.ArenaObservable.PlayerData();
 			PTK.ArenaObservable.PlayerData[] objs = playerData.FromJson<PTK.ArenaObservable.PlayerData>(msg);
-			var data = objs[0];
-            if( data.UID != ansuzClient.UID )
+            var data = objs[0];
+            BMSByte bmsByte = new BMSByte();
+            bmsByte = bmsByte.Clone(System.Convert.FromBase64String(data.BMSData), 0);
+            Binary frame = new Binary(Networker.Time.Timestep, false, bmsByte, Receivers.Target, 0, true);
+
+            if ( data.UID != ansuzClient.UID )
             {
                 Debug.Log("other playerDataReceived :" + data.BMSData);
+                switch( data.RequestID )
+                {
+                    case (int)PTK.AnsuzRequestID.CreatePlayer:
+                        NetworkObject.Factory.NetworkCreateObject(Networker, 3, (uint)data.UID, frame, CreateObjects);
+                        break;
 
+                    default:
+                        Debug.Log("not definition request" + data.RequestID);
+                        break;
+                }
             }
         }
 
@@ -154,7 +166,7 @@ namespace BeardedManStudios.Forge.Networking.Unity
                 Debug.Log("frameDataReceived :" + data.BMSData);
                 ///UDPClient Socket = new UDPClient();
                 ///Socket.Connect("127.0.0.1");
-                NetworkObject.Factory.NetworkCreateObject(Networker, 3, 0, frame, CreatePendingObjects);
+                ///NetworkObject.Factory.NetworkCreateObject(Networker, 3, (uint)data.UID, frame, CreateObjects);
                 ///PlayerNetworkObject newPlayer = new PlayerNetworkObject(Socket, 0, frame);
             }
 
@@ -281,7 +293,12 @@ namespace BeardedManStudios.Forge.Networking.Unity
 				Networker.objectCreated -= CreatePendingObjects;
 		}
 
-		public void MatchmakingServersFromMasterServer(string masterServerHost,
+        public void CreateObjects(NetworkObject obj)
+        {
+            CaptureObjects(obj);
+        }
+
+        public void MatchmakingServersFromMasterServer(string masterServerHost,
 			ushort masterServerPort,
 			int elo,
 			System.Action<MasterServerResponse> callback = null,

@@ -25,12 +25,14 @@ namespace BeardedManStudios.Forge.Networking.Generated
 			networkObject = (PlayerNetworkObject)obj;
 			networkObject.AttachedBehavior = this;
 
+            /*
 			base.SetupHelperRpcs(networkObject);
 			networkObject.RegisterRpc("Shoot", Shoot, typeof(Vector3), typeof(Vector3));
 			networkObject.RegisterRpc("Die", Die, typeof(string));
 			networkObject.RegisterRpc("SwitchWeapon", SwitchWeapon, typeof(int));
 			networkObject.RegisterRpc("TakeDamage", TakeDamage, typeof(int), typeof(Vector3), typeof(Vector3));
 			networkObject.RegisterRpc("SetupPlayer", SetupPlayer, typeof(int), typeof(string));
+            */
 
 			networkObject.onDestroy += DestroyGameObject;
 

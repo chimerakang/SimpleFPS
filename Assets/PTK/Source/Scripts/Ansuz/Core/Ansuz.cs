@@ -160,6 +160,11 @@ namespace PTK
             _qosMap.Add(topic, qos);
         }
 
+        public void RegisterTopic(string topic, byte qos)
+        {
+            _qosMap.Add(topic, qos);
+        }
+
         public void UnregisterReceiver(string topic)
         {
             _receiverMap.Remove(topic);
@@ -251,8 +256,6 @@ namespace PTK
 
         void OnMqttMsgReceived(object sender, MqttMsgPublishEventArgs e)
         {
-            /*
-                */
             string topic = e.Topic;
             if( topic != null && topic.Length > 0 && _receiverMap.ContainsKey(topic) )
             {

@@ -19,6 +19,9 @@ namespace BeardedManStudios.Forge.Networking.Generated
 		private Vector3 _position;
 		public event FieldEvent<Vector3> positionChanged;
 		public InterpolateVector3 positionInterpolation = new InterpolateVector3() { LerpT = 0.15f, Enabled = true };
+
+        private PTK.ArenaObservable.FrameData frameSender = new PTK.ArenaObservable.FrameData();
+        private string playerFrameTopic = "";
         bool firstFrame = true;
 		public Vector3 position
 		{
@@ -186,8 +189,6 @@ namespace BeardedManStudios.Forge.Networking.Generated
 			}
 		}
 
-        public PTK.ArenaObservable.PlayerData _playerData = new PTK.ArenaObservable.PlayerData();
-
         public void SetisMovingDirty()
 		{
 			_dirtyFields[0] |= 0x20;
@@ -265,13 +266,13 @@ namespace BeardedManStudios.Forge.Networking.Generated
                 BMSByte bmsByte = new BMSByte();
                 bmsByte = WritePayload(bmsByte);
               
-                PTK.ArenaObservable.FrameData _frameData = new PTK.ArenaObservable.FrameData();
-                _frameData.BMSData = Convert.ToBase64String(bmsByte.CompressBytes());
-                _frameData.UID = PTK.Ansuz.Instance.UID;
-                _frameData.GroupID = MessageGroupIds.VIEW_INITIALIZE;
-                PTK.ArenaObservable.FrameData[] objs = { _frameData };
-                string json = _frameData.ToJson<PTK.ArenaObservable.FrameData>(objs, false);
-                PTK.Ansuz.Instance.PublishToTopic("arena/frameData/all", json, 0);
+                PTK.ArenaObservable.PlayerData _playerData = new PTK.ArenaObservable.PlayerData();
+                _playerData.BMSData = Convert.ToBase64String(bmsByte.CompressBytes());
+                _playerData.UID = PTK.Ansuz.Instance.UID;
+                _playerData.RequestID = (int)PTK.AnsuzRequestID.CreatePlayer;
+                PTK.ArenaObservable.PlayerData[] objs = { _playerData };
+                string json = _playerData.ToJson<PTK.ArenaObservable.PlayerData>(objs, false);
+                PTK.Ansuz.Instance.PublishToTopic("arena/playerData/all", json, 0);
                 firstFrame = false;
             }
 
@@ -405,11 +406,11 @@ namespace BeardedManStudios.Forge.Networking.Generated
             {
                 if( _dirtyFields[0] > 0)
                 {
-                    /// send player data
-                    _playerData.BMSData = Convert.ToBase64String(dirtyFieldsData.CompressBytes());
-                    PTK.ArenaObservable.PlayerData[] objs = { _playerData };
-                    string json = _playerData.ToJson<PTK.ArenaObservable.PlayerData>(objs, false);
-                    PTK.Ansuz.Instance.PublishToTopic("arena/playerData/all", json, 0);
+                    /// send frame data
+                    frameSender.BMSData = Convert.ToBase64String(dirtyFieldsData.CompressBytes());
+                    PTK.ArenaObservable.FrameData[] objs = { frameSender };
+                    string json = frameSender.ToJson<PTK.ArenaObservable.FrameData>(objs, false);
+                    PTK.Ansuz.Instance.PublishToTopic(playerFrameTopic, json, 0);
                 }
                 return;
             }
@@ -448,16 +449,28 @@ namespace BeardedManStudios.Forge.Networking.Generated
 
         public void SetupUID( int uid )
         {
-            _playerData.UID = uid;
+            frameSender.UID = uid;
+            playerFrameTopic = "arena/playerData/" + uid;
+            if( !IsOwner )
+            {
+                PTK.ArenaObservable.PlayerData frameReceiver = new PTK.ArenaObservable.PlayerData();
+                PTK.Ansuz.Instance.RegisterReceiver(playerFrameTopic, 0, frameReceiver);
+                frameReceiver.MessageReceived += frameDataReceived;
+            }
         }
 
-		private void Initialize()
+        private void frameDataReceived(string msg)
+        {
+            Debug.Log("frame data received:" + msg);
+        }
+
+        private void Initialize()
 		{
 			if (readDirtyFlags == null)
 				readDirtyFlags = new byte[1];
 
-            _playerData.RequestID = (int)PTK.AnsuzRequestID.SendPlayerModel;
-            if( IsOwner )
+            frameSender.RequestID = (int)PTK.AnsuzRequestID.SendFrameData;
+            if ( IsOwner )
             {
                 SetupUID(PTK.Ansuz.Instance.UID);
 
@@ -468,7 +481,7 @@ namespace BeardedManStudios.Forge.Networking.Generated
                 string json = _playerData.ToJson<PTK.ArenaObservable.PlayerData>(objs, false);
                 PTK.Ansuz.Instance.PublishToTopic("arena/playerData/all", json, 0);
                 */
-            }
+            } 
         }
 
         public PlayerNetworkObject() : base() { Initialize(); }
