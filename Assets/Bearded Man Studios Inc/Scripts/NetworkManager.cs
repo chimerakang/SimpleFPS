@@ -141,6 +141,15 @@ namespace BeardedManStudios.Forge.Networking.Unity
                     {
                         case (int)PTK.AnsuzRequestID.CreatePlayer:
                             NetworkObject.Factory.NetworkCreateObject(Networker, 3, (uint)data.UID, frame, CreateObjects);
+
+                            /// and create current frame to new one
+                            MainThreadManager.Run(() =>
+                            {
+                                if( OwnPlayer != null && OwnPlayer.networkObject != null )
+                                {
+                                    OwnPlayer.networkObject.firstFrame = true;
+                                }
+                            });
                             break;
 
                         default:
@@ -185,21 +194,6 @@ namespace BeardedManStudios.Forge.Networking.Unity
 
 			UnityObjectMapper.Instance.UseAsDefault();
 			NetworkObject.Factory = new NetworkObjectFactory();
-
-			/*
-			if (Networker is IServer)
-			{
-				if (!string.IsNullOrEmpty(masterServerHost))
-				{
-					_masterServerHost = masterServerHost;
-					_masterServerPort = masterServerPort;
-
-					RegisterOnMasterServer(masterServerRegisterData);
-				}
-
-				Networker.playerAccepted += PlayerAcceptedSceneSetup;
-			}
-            */
 		}
 
 		public void CreatePendingObjects(NetworkObject obj)

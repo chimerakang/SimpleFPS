@@ -18,11 +18,12 @@ namespace BeardedManStudios.Forge.Networking.Generated
 		private Vector3 _position;
 		public event FieldEvent<Vector3> positionChanged;
 		public InterpolateVector3 positionInterpolation = new InterpolateVector3() { LerpT = 0.15f, Enabled = true };
+        public int UID = 0;
         public bool IsRemote = false;
-        private PTK.ArenaObservable.FrameData frameSender = new PTK.ArenaObservable.FrameData();
+        public PTK.ArenaObservable.FrameData frameSender = new PTK.ArenaObservable.FrameData();
         private string playerFrameTopic = "";
         private int frameCount = 0;
-        bool firstFrame = true;
+        public bool firstFrame = true;
 		public Vector3 position
 		{
 			get { return _position; }
@@ -452,6 +453,7 @@ namespace BeardedManStudios.Forge.Networking.Generated
 
         public void SetupUID( int uid, bool isRemote = false )
         {
+            UID = uid;
             frameSender.UID = uid;
             playerFrameTopic = "arena/frameData/" + uid;
             IsRemote = isRemote;

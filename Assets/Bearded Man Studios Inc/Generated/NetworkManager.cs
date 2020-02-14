@@ -16,6 +16,8 @@ namespace BeardedManStudios.Forge.Networking.Unity
 		public GameObject[] PlayerNetworkObject = null;
 		public GameObject[] WeaponPickupNetworkObject = null;
 
+        public PlayerBehavior OwnPlayer = null;
+
         private void SetupObjectCreatedEvent()
 		{
 			Networker.objectCreated += CaptureObjects;
@@ -83,7 +85,7 @@ namespace BeardedManStudios.Forge.Networking.Unity
 			{
 				MainThreadManager.Run(() =>
 				{
-					NetworkBehavior newObj = null;
+					NetworkBehavior newObj = null;                    
 					if (!NetworkBehavior.skipAttachIds.TryGetValue(obj.NetworkId, out newObj))
 					{
 						if (PlayerNetworkObject.Length > 0 && PlayerNetworkObject[obj.CreateCode] != null)
@@ -273,7 +275,7 @@ namespace BeardedManStudios.Forge.Networking.Unity
 			var go = Instantiate(PlayerNetworkObject[index]);
 			var netBehavior = go.GetComponent<PlayerBehavior>();
 
-			NetworkObject obj = null;
+            NetworkObject obj = null;
 			if (!sendTransform && position == null && rotation == null)
 				obj = netBehavior.CreateNetworkObject(Networker, index);
 			else

@@ -39,10 +39,10 @@ namespace BeardedManStudios.Forge.Networking.Generated
 			///if (!obj.IsOwner)
             if( networkObject.IsRemote )
 			{
-				if (!skipAttachIds.ContainsKey(obj.NetworkId))
-					ProcessOthers(gameObject.transform, obj.NetworkId + 1);
+				if (!skipAttachIds.ContainsKey((uint)networkObject.frameSender.UID))
+					ProcessOthers(gameObject.transform, (uint)networkObject.frameSender.UID + 1);
 				else
-					skipAttachIds.Remove(obj.NetworkId);
+					skipAttachIds.Remove((uint)networkObject.frameSender.UID);
 			}
 
 			if (obj.Metadata != null)
